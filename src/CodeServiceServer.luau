@@ -352,7 +352,7 @@ end
 	print(alreadyRedeemed)
 	```
 ]=]
-function CodeService.hasRedeemedCode(_: CodeService, player: Player, code: string): boolean
+function CodeService.hasRedeemedCode(_: CodeServiceServer, player: Player, code: string): boolean
 	local alreadyRedeemedCodes = DataService:get(player, "_codes")
 	if alreadyRedeemedCodes and alreadyRedeemedCodes[code] then
 		return true
