@@ -1,12 +1,12 @@
 [package]
-name = "yuz/code-service"
+name = "yuzkkj/code-service"
 version = "1.0.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-description = "A fork of leifstout CodeService."
+description = "A fork of Leif Stout CodeService."
 repository = "https://github.com/Yuzkkj/code-service"
 license = "MIT"
-authors = ["Leifstout"]
+authors = ["Leif Stout"]
 exclude = ["**"]
 include = [
     "default.project.json",

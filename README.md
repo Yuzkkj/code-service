@@ -1,3 +1,3 @@
 # CodeService
 
-A fork of leifstout CodeService.
+A fork of Leif Stout CodeService.
