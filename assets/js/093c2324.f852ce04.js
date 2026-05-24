@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[107],{4410:e=>{e.exports=JSON.parse('{"sourceUrl":"https://github.com/Yuzkkj/code-service/blob/main","baseUrl":"/code-service/","classOrder":["CodeServiceServer","CodeServiceClient"],"apiCategories":[]}')}}]);
