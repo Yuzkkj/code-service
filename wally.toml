@@ -1,0 +1,21 @@
+[package]
+name = "yuz/code-service"
+version = "1.0.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = "A fork of leifstout CodeService."
+repository = "https://github.com/Yuzkkj/code-service"
+license = "MIT"
+authors = ["Leifstout"]
+exclude = ["**"]
+include = [
+    "default.project.json",
+    "src",
+    "src/**",
+    "wally.toml",
+]
+
+[dependencies]
+DataService = "leifstout/dataservice@1.0.0"
+Networker = "ykxero/networker@0.3.31"
+ServicePlayerData = "leifstout/serviceplayerdata@0.1.2"

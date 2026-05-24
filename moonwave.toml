@@ -1,0 +1,6 @@
+classOrder = [
+	"CodeServiceServer",
+	"CodeServiceClient"
+]
+
+gitSourceBranch = "main"
