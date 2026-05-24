@@ -1,6 +1,11 @@
+local RunService = game:GetService("RunService")
 local Networker = require(script.Parent.Parent.Networker)
 
 local CodeServiceUtils = require(script.Parent.CodeServiceUtils)
+
+if RunService:IsServer() then
+	return {} :: CodeServiceClient
+end
 
 --[=[
 	@class CodeServiceClient

@@ -1,10 +1,15 @@
 local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 
 local DataService = require(script.Parent.Parent.DataService).server
 local Networker = require(script.Parent.Parent.Networker)
 local ServicePlayerData = require(script.Parent.Parent.ServicePlayerData)
 
 local CodeServiceUtils = require(script.Parent.CodeServiceUtils)
+
+if RunService:IsClient() then
+	return {} :: CodeServiceServer
+end
 
 --[=[
 	@interface Code
@@ -106,16 +111,19 @@ end
 	Initializes the CodeService server-side, starts the periodic code update loop, and registers the networking channel.
 
 	```lua
+	local DataService = require(path.to.DataService).server
 	local CodeService = require(path.to.CodeService).server
 
 	CodeService:init({
-		["Update1"] = function(player)
-			print("Player rewarded!")
+		money = function(player: Player, amount: number)
+			DataService:update(player, "money", function(money)
+				return money + amount
+			end)
 		end
 	})
 	```
 ]=]
-function CodeService.init(self: CodeService, rewardCallbacks: RewardCallbacks): ()
+function CodeService.init(self: CodeServiceServer, rewardCallbacks: RewardCallbacks): ()
 	self.rewardCallbacks = rewardCallbacks
 	self.networker = Networker.server.new("CodeService", self, { self.redeem })
 	self.codes = {}
@@ -129,7 +137,7 @@ function CodeService.init(self: CodeService, rewardCallbacks: RewardCallbacks): 
 	end)
 end
 
-function CodeService._update(self: CodeService): ()
+function CodeService._update(self: CodeServiceServer): ()
 	log("Updating codes")
 	local s, result = pcall(function()
 		return self.dataStore:GetAsync(DATA_STORE_KEY)
@@ -156,7 +164,7 @@ end
 	CodeService:listActiveCodes()
 	```
 ]=]
-function CodeService.listActiveCodes(self: CodeService): ()
+function CodeService.listActiveCodes(self: CodeServiceServer): ()
 	for name, code in self.codes do
 		if
 			code.active
@@ -182,7 +190,7 @@ end
 	CodeService:addUserIdsToCode("Update1", { 1234567, 7654321 })
 	```
 ]=]
-function CodeService.addUserIdsToCode(self: CodeService, code: string, userIds: { number }): ()
+function CodeService.addUserIdsToCode(self: CodeServiceServer, code: string, userIds: { number }): ()
 	code = string.lower(code)
 	print("Adding user ids to code", code, userIds)
 	local s, e = pcall(function()
@@ -224,14 +232,13 @@ end
 	local CodeService = require(path.to.CodeService).server
 
 	CodeService:add("Update1", {
-		reward = "Coins",
-		params = { 100 },
-		active = true,
+		reward = { "money" },
+		params = { 1000 },
 		uses = 500,
 	})
 	```
 ]=]
-function CodeService.add(self: CodeService, code: string, info: Code): ()
+function CodeService.add(self: CodeServiceServer, code: string, info: Code): ()
 	code = string.lower(code)
 	print("Adding code", code, info)
 	info.active = true
@@ -273,7 +280,7 @@ end
 	CodeService:remove("Update1")
 	```
 ]=]
-function CodeService.remove(self: CodeService, code: string): ()
+function CodeService.remove(self: CodeServiceServer, code: string): ()
 	code = string.lower(code)
 	print("Removing code", code)
 	local s, e = pcall(function()
@@ -305,7 +312,7 @@ end
 	CodeService:deactivate("Update1")
 	```
 ]=]
-function CodeService.deactivate(self: CodeService, code: string): ()
+function CodeService.deactivate(self: CodeServiceServer, code: string): ()
 	code = string.lower(code)
 	print("Deactivating code", code)
 	local s, e = pcall(function()
@@ -354,7 +361,7 @@ function CodeService.hasRedeemedCode(_: CodeService, player: Player, code: strin
 	return false
 end
 
-function CodeService._redeem(self: CodeService, player: Player, codeId: string): number
+function CodeService._redeem(self: CodeServiceServer, player: Player, codeId: string): number
 	local code = self.codes[codeId]
 	if not code then
 		return REDEEM_ENUMS.invalid
@@ -410,7 +417,7 @@ function CodeService._redeem(self: CodeService, player: Player, codeId: string):
 	return REDEEM_ENUMS.success
 end
 
-function CodeService._reward(self: CodeService, player: Player, reward: string, ...: any?): number?
+function CodeService._reward(self: CodeServiceServer, player: Player, reward: string, ...: any?): number?
 	log("Rewarding player", player, reward, ...)
 	local callback = self.rewardCallbacks[reward]
 	if not callback then
@@ -437,7 +444,7 @@ end
 	print(result)
 	```
 ]=]
-function CodeService.redeem(self: CodeService, player: Player, code: string)
+function CodeService.redeem(self: CodeServiceServer, player: Player, code: string)
 	local playerData = self.playerData:get(player)
 	if playerData.redeeming then
 		return REDEEM_ENUMS.err
@@ -486,7 +493,7 @@ function CodeService.redeem(self: CodeService, player: Player, code: string)
 	return REDEEM_ENUMS.success
 end
 
-type CodeService = typeof(CodeService) & {
+type CodeServiceServer = typeof(CodeService) & {
 	networker: Networker.Server,
 	codes: Codes,
 	debug: boolean,
@@ -495,4 +502,4 @@ type CodeService = typeof(CodeService) & {
 	playerData: ServicePlayerData.ServicePlayerData<PlayerData>,
 }
 
-return CodeService :: CodeService
+return CodeService :: CodeServiceServer
