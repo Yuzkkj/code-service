@@ -2,7 +2,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
 
 local DataService = require(script.Parent.Parent.DataService).server
-local Networker = require(script.Parent.Parent.Networker)
+local Networker = require(script.Parent.Parent.Networker).server
 local ServicePlayerData = require(script.Parent.Parent.ServicePlayerData)
 
 local CodeServiceUtils = require(script.Parent.CodeServiceUtils)
@@ -80,28 +80,8 @@ type PlayerData = {
 	Server-side service that handles the management, persistence, validation, and redemption of promotional codes.
 ]=]
 local CodeService = {
-	--[=[
-		@prop debug boolean
-		@within CodeServiceServer
-
-		When enabled, prints detailed debug logs to the console.
-	]=]
-	debug = false,
-
-	--[=[
-		@prop dataStore DataStore
-		@within CodeServiceServer
-
-		The Roblox DataStore instance used for persisting code information.
-	]=]
 	dataStore = DataStoreService:GetDataStore("Codes"),
 }
-
-local function log(...)
-	if CodeService.debug then
-		print(...)
-	end
-end
 
 --[=[
 	@method init
@@ -125,7 +105,7 @@ end
 ]=]
 function CodeService.init(self: CodeServiceServer, rewardCallbacks: RewardCallbacks): ()
 	self.rewardCallbacks = rewardCallbacks
-	self.networker = Networker.server.new("CodeService", self, { self.redeem })
+	self.networker = Networker.new("CodeService", self, { self.redeem })
 	self.codes = {}
 	self.playerData = ServicePlayerData.new(PLAYER_DATA_TEMPLATE)
 
@@ -138,7 +118,6 @@ function CodeService.init(self: CodeServiceServer, rewardCallbacks: RewardCallba
 end
 
 function CodeService._update(self: CodeServiceServer): ()
-	log("Updating codes")
 	local s, result = pcall(function()
 		return self.dataStore:GetAsync(DATA_STORE_KEY)
 	end)
@@ -149,31 +128,32 @@ function CodeService._update(self: CodeServiceServer): ()
 	end
 
 	self.codes = result
-	log("Updated codes", result)
 end
 
 --[=[
-	@method listActiveCodes
+	@method getActiveCodes
 	@within CodeServiceServer
 
-	Prints a list of all currently active codes to the console.
+	Returns a dictionary of all currently active codes.
 
 	```lua
 	local CodeService = require(path.to.CodeService).server
 
-	CodeService:listActiveCodes()
+	local activeCodes = CodeService:getActiveCodes()
 	```
 ]=]
-function CodeService.listActiveCodes(self: CodeServiceServer): ()
+function CodeService.getActiveCodes(self: CodeServiceServer): Codes
+	local activeCodes = {}
 	for name, code in self.codes do
 		if
 			code.active
 			and (not code.expiration or code.expiration > os.time())
 			and (not code.uses or code.uses > 0)
 		then
-			print(name, code)
+			activeCodes[name] = code
 		end
 	end
+	return activeCodes
 end
 
 --[=[
@@ -192,7 +172,6 @@ end
 ]=]
 function CodeService.addUserIdsToCode(self: CodeServiceServer, code: string, userIds: { number }): ()
 	code = string.lower(code)
-	print("Adding user ids to code", code, userIds)
 	local s, e = pcall(function()
 		self.dataStore:UpdateAsync(DATA_STORE_KEY, function(codes: Codes)
 			if not codes or not codes[code] then
@@ -211,9 +190,7 @@ function CodeService.addUserIdsToCode(self: CodeServiceServer, code: string, use
 		end)
 	end)
 
-	if s then
-		print("Successfully added user ids to code", code)
-	else
+	if not s then
 		warn("Failed to add user ids to code", e)
 	end
 
@@ -240,7 +217,7 @@ end
 ]=]
 function CodeService.add(self: CodeServiceServer, code: string, info: Code): ()
 	code = string.lower(code)
-	print("Adding code", code, info)
+
 	info.active = true
 	local s, e = pcall(function()
 		self.dataStore:UpdateAsync(DATA_STORE_KEY, function(codes: Codes)
@@ -258,9 +235,7 @@ function CodeService.add(self: CodeServiceServer, code: string, info: Code): ()
 		end)
 	end)
 
-	if s then
-		print("Successfully added code", code)
-	else
+	if not s then
 		warn("Failed to add code", e)
 	end
 
@@ -282,7 +257,7 @@ end
 ]=]
 function CodeService.remove(self: CodeServiceServer, code: string): ()
 	code = string.lower(code)
-	print("Removing code", code)
+
 	local s, e = pcall(function()
 		self.dataStore:UpdateAsync(DATA_STORE_KEY, function(codes: Codes)
 			codes[code] = nil
@@ -290,9 +265,7 @@ function CodeService.remove(self: CodeServiceServer, code: string): ()
 		end)
 	end)
 
-	if s then
-		print("Successfully removed code", code)
-	else
+	if not s then
 		warn("Failed to remove code", e)
 	end
 
@@ -314,7 +287,7 @@ end
 ]=]
 function CodeService.deactivate(self: CodeServiceServer, code: string): ()
 	code = string.lower(code)
-	print("Deactivating code", code)
+
 	local s, e = pcall(function()
 		self.dataStore:UpdateAsync(DATA_STORE_KEY, function(codes: Codes)
 			if not codes or not codes[code] then
@@ -327,9 +300,7 @@ function CodeService.deactivate(self: CodeServiceServer, code: string): ()
 		end)
 	end)
 
-	if s then
-		print("Successfully deactivated code", code)
-	else
+	if not s then
 		warn("Failed to deactivate code", e)
 	end
 
@@ -418,7 +389,6 @@ function CodeService._redeem(self: CodeServiceServer, player: Player, codeId: st
 end
 
 function CodeService._reward(self: CodeServiceServer, player: Player, reward: string, ...: any?): number?
-	log("Rewarding player", player, reward, ...)
 	local callback = self.rewardCallbacks[reward]
 	if not callback then
 		warn("No callback found for reward", reward)
@@ -453,13 +423,11 @@ function CodeService.redeem(self: CodeServiceServer, player: Player, code: strin
 
 	code = string.lower(code)
 	local redeemStatus = self:_redeem(player, code)
-	log("Redeem status", redeemStatus)
 	if redeemStatus ~= REDEEM_ENUMS.success then
 		playerData.redeeming = false
 		return redeemStatus
 	end
 
-	log("Updating player codes")
 	DataService:update(player, "_codes", function(codes: InventoryCodes)
 		if not codes then
 			codes = {}
@@ -494,9 +462,8 @@ function CodeService.redeem(self: CodeServiceServer, player: Player, code: strin
 end
 
 type CodeServiceServer = typeof(CodeService) & {
-	networker: Networker.Server,
+	networker: Networker.NetworkerServer,
 	codes: Codes,
-	debug: boolean,
 	dataStore: DataStore,
 	rewardCallbacks: RewardCallbacks,
 	playerData: ServicePlayerData.ServicePlayerData<PlayerData>,

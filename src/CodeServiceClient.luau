@@ -1,5 +1,5 @@
 local RunService = game:GetService("RunService")
-local Networker = require(script.Parent.Parent.Networker)
+local Networker = require(script.Parent.Parent.Networker).client
 
 local CodeServiceUtils = require(script.Parent.CodeServiceUtils)
 
@@ -21,7 +21,7 @@ local CodeServiceClient = {}
 	Initializes the CodeServiceClient.
 ]=]
 function CodeServiceClient.init(self: CodeServiceClient): ()
-	self.networker = Networker.client.new("CodeService", self)
+	self.networker = Networker.new("CodeService", self)
 end
 
 --[=[
@@ -48,7 +48,7 @@ function CodeServiceClient.redeem(self: CodeServiceClient, code: string): (boole
 end
 
 type CodeServiceClient = typeof(CodeServiceClient) & {
-	networker: Networker.Client,
+	networker: Networker.NetworkerClient,
 }
 
 return CodeServiceClient :: CodeServiceClient
