@@ -2,7 +2,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
 
 local DataService = require(script.Parent.Parent.DataService).server
-local Networker = require(script.Parent.Parent.Networker).server
+local Networker = require(script.Parent.Parent.Networker)
 local ServicePlayerData = require(script.Parent.Parent.ServicePlayerData)
 
 local CodeServiceUtils = require(script.Parent.CodeServiceUtils)
@@ -105,7 +105,7 @@ local CodeService = {
 ]=]
 function CodeService.init(self: CodeServiceServer, rewardCallbacks: RewardCallbacks): ()
 	self.rewardCallbacks = rewardCallbacks
-	self.networker = Networker.new("CodeService", self, { self.redeem })
+	self.networker = Networker.server.new("CodeService", self, { self.redeem })
 	self.codes = {}
 	self.playerData = ServicePlayerData.new(PLAYER_DATA_TEMPLATE)
 
@@ -462,7 +462,7 @@ function CodeService.redeem(self: CodeServiceServer, player: Player, code: strin
 end
 
 type CodeServiceServer = typeof(CodeService) & {
-	networker: Networker.NetworkerServer,
+	networker: Networker.Server,
 	codes: Codes,
 	dataStore: DataStore,
 	rewardCallbacks: RewardCallbacks,
